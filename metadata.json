@@ -1,0 +1,6 @@
+{
+  "name": "ClipPulse Studio",
+  "description": "AI YouTube Shorts & 2D Animation Automation Studio for multi-channel clipping, copyright-free editing, captions, and scheduled YouTube publishing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

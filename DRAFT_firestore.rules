@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'defaultMaxDuration', 'defaultLanguage', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'defaultMaxDuration', 'defaultLanguage', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && data.defaultMaxDuration is number && data.defaultMaxDuration >= 15 && data.defaultMaxDuration <= 60
+        && data.defaultLanguage is string && data.defaultLanguage in ['hi', 'en', 'hinglish']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChannel(data) {
+      return data.keys().hasAll(['ownerId', 'youtubeChannelId', 'title', 'isOAuthConnected', 'videosPerDay', 'postingSlots', 'preferredTemplate', 'maxClipDuration', 'automationMonths', 'automationActive', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'youtubeChannelId', 'title', 'handle', 'thumbnailUrl', 'subscriberCount', 'isOAuthConnected', 'videosPerDay', 'postingSlots', 'preferredTemplate', 'maxClipDuration', 'automationMonths', 'automationActive', 'createdAt', 'updatedAt'])
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId == request.auth.uid
+        && data.youtubeChannelId is string && data.youtubeChannelId.size() >= 1 && data.youtubeChannelId.size() <= 128
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
+        && (!('handle' in data) || (data.handle is string && data.handle.size() <= 80))
+        && (!('thumbnailUrl' in data) || (data.thumbnailUrl is string && data.thumbnailUrl.size() <= 500))
+        && (!('subscriberCount' in data) || (data.subscriberCount is string && data.subscriberCount.size() <= 40))
+        && data.isOAuthConnected is bool
+        && data.videosPerDay is number && data.videosPerDay >= 1 && data.videosPerDay <= 3
+        && data.postingSlots is list && data.postingSlots.size() >= 1 && data.postingSlots.size() <= 3 && data.postingSlots[0] is string
+        && data.preferredTemplate is string && data.preferredTemplate.size() >= 1 && data.preferredTemplate.size() <= 64
+        && data.maxClipDuration is number && data.maxClipDuration >= 15 && data.maxClipDuration <= 60
+        && data.automationMonths is number && data.automationMonths >= 1 && data.automationMonths <= 12
+        && data.automationActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJob(data) {
+      return data.keys().hasAll(['ownerId', 'channelId', 'sourceType', 'sourceTitle', 'clipStartSec', 'clipEndSec', 'durationSec', 'templateId', 'copyrightFreeTransforms', 'title', 'scheduledAt', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['ownerId', 'channelId', 'sourceType', 'sourceUrl', 'sourceTitle', 'sourceVideoId', 'clipStartSec', 'clipEndSec', 'durationSec', 'templateId', 'copyrightFreeTransforms', 'captionsPayload', 'title', 'description', 'scheduledAt', 'status', 'youtubeVideoId', 'renderPath', 'createdAt', 'updatedAt'])
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 && data.ownerId == request.auth.uid
+        && data.channelId is string && isValidId(data.channelId)
+        && data.sourceType is string && data.sourceType in ['youtube_url', 'livestream', '2d_animation', 'uploaded_file']
+        && (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 500))
+        && data.sourceTitle is string && data.sourceTitle.size() >= 1 && data.sourceTitle.size() <= 200
+        && (!('sourceVideoId' in data) || (data.sourceVideoId is string && data.sourceVideoId.size() <= 64))
+        && data.clipStartSec is number && data.clipStartSec >= 0
+        && data.clipEndSec is number && data.clipEndSec >= 0
+        && data.durationSec is number && data.durationSec >= 1 && data.durationSec <= 60
+        && data.templateId is string && data.templateId.size() >= 1 && data.templateId.size() <= 64
+        && data.copyrightFreeTransforms is list && data.copyrightFreeTransforms.size() <= 6
+        && (data.copyrightFreeTransforms.size() == 0 || data.copyrightFreeTransforms[0] is string)
+        && (!('captionsPayload' in data) || (data.captionsPayload is string && data.captionsPayload.size() <= 16000))
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 120
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && data.scheduledAt is string && data.scheduledAt.size() >= 1 && data.scheduledAt.size() <= 64
+        && data.status is string && data.status in ['draft', 'rendered', 'scheduled', 'published', 'failed']
+        && (!('youtubeVideoId' in data) || (data.youtubeVideoId is string && data.youtubeVideoId.size() <= 64))
+        && (!('renderPath' in data) || (data.renderPath is string && data.renderPath.size() <= 500))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'defaultMaxDuration', 'defaultLanguage', 'updatedAt']);
+    }
+
+    match /channels/{channelId} {
+      allow get: if isSignedIn() && isValidId(channelId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(channelId)
+        && isValidChannel(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(channelId)
+        && existing().ownerId == request.auth.uid
+        && isValidChannel(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'handle', 'thumbnailUrl', 'subscriberCount', 'isOAuthConnected',
+          'videosPerDay', 'postingSlots', 'preferredTemplate', 'maxClipDuration',
+          'automationMonths', 'automationActive', 'updatedAt'
+        ]);
+      allow delete: if isVerifiedUser() && isValidId(channelId) && existing().ownerId == request.auth.uid;
+    }
+
+    match /automationJobs/{jobId} {
+      allow get: if isSignedIn() && isValidId(jobId) && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(jobId)
+        && isValidJob(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/channels/$(incoming().channelId))
+        && get(/databases/$(database)/documents/channels/$(incoming().channelId)).data.ownerId == request.auth.uid;
+      allow update: if isVerifiedUser()
+        && isValidId(jobId)
+        && existing().ownerId == request.auth.uid
+        && existing().status != 'published'
+        && isValidJob(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().channelId == existing().channelId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'templateId', 'copyrightFreeTransforms', 'captionsPayload', 'scheduledAt', 'renderPath', 'status', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'youtubeVideoId', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser() && isValidId(jobId) && existing().ownerId == request.auth.uid;
+    }
+  }
+}

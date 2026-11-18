@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private authenticated creator profile and studio defaults.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 254 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "defaultMaxDuration": { "type": "number" },
+        "defaultLanguage": { "type": "string", "enum": ["hi", "en", "hinglish"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "defaultMaxDuration", "defaultLanguage", "createdAt", "updatedAt"]
+    },
+    "YouTubeChannel": {
+      "title": "YouTubeChannel",
+      "description": "Connected YouTube channel with multi-month automation schedule settings.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "youtubeChannelId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "handle": { "type": "string", "maxLength": 80 },
+        "thumbnailUrl": { "type": "string", "maxLength": 500 },
+        "subscriberCount": { "type": "string", "maxLength": 40 },
+        "isOAuthConnected": { "type": "boolean" },
+        "videosPerDay": { "type": "number" },
+        "postingSlots": { "type": "array" },
+        "preferredTemplate": { "type": "string", "maxLength": 64 },
+        "maxClipDuration": { "type": "number" },
+        "automationMonths": { "type": "number" },
+        "automationActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "youtubeChannelId", "title", "isOAuthConnected", "videosPerDay", "postingSlots", "preferredTemplate", "maxClipDuration", "automationMonths", "automationActive", "createdAt", "updatedAt"]
+    },
+    "AutomationJob": {
+      "title": "AutomationJob",
+      "description": "Scheduled or rendered Short clip or 2D animation video queued for a YouTube channel.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "channelId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sourceType": { "type": "string", "enum": ["youtube_url", "livestream", "2d_animation", "uploaded_file"] },
+        "sourceUrl": { "type": "string", "maxLength": 500 },
+        "sourceTitle": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "sourceVideoId": { "type": "string", "maxLength": 64 },
+        "clipStartSec": { "type": "number" },
+        "clipEndSec": { "type": "number" },
+        "durationSec": { "type": "number" },
+        "templateId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "copyrightFreeTransforms": { "type": "array" },
+        "captionsPayload": { "type": "string", "maxLength": 16000 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "scheduledAt": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["draft", "rendered", "scheduled", "published", "failed"] },
+        "youtubeVideoId": { "type": "string", "maxLength": 64 },
+        "renderPath": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "channelId", "sourceType", "sourceTitle", "clipStartSec", "clipEndSec", "durationSec", "templateId", "copyrightFreeTransforms", "title", "scheduledAt", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile and studio defaults."
+    },
+    "/channels/{channelId}": {
+      "schema": { "$ref": "#/entities/YouTubeChannel" },
+      "description": "User-linked YouTube channels and automation schedules."
+    },
+    "/automationJobs/{jobId}": {
+      "schema": { "$ref": "#/entities/AutomationJob" },
+      "description": "Extracted clips, 2D animations, and scheduled YouTube uploads."
+    }
+  }
+}
